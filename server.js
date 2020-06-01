@@ -74,19 +74,19 @@ app.get('/', (req, res) => {
     }
     let formattedDate = new Date(date.split("-")[0], date.split("-")[1]-1, date.split("-")[2]);
    
-    User.findOneAndUpdate({ _id: req.body.userId }, 
+    User.findByIdAndUpdate({ _id: req.body.userId }, 
        { $inc: { count: 1 } },
        {new: true },
         function (error, success) {
           if (error) {
               console.log(error);
           } else {
-              console.log(success);
+              //console.log(success);
           }
       });
     
-     User.findOneAndUpdate({ _id: req.body.userId }, 
-       { $push: { log: {description: req.body.description, duration: req.body.duration, date: formattedDate} } },
+     User.findByIdAndUpdate({ _id: req.body.userId }, 
+       { $push: { log: {description: req.body.description, duration: req.body.duration, date: date} } },
         function (error, success) {
           if (error) {
               console.log(error);
@@ -111,21 +111,25 @@ app.get('/', (req, res) => {
       let log = user.log;
       
       if (req.query.from && req.query.to) {
-        let fromDate = new Date(req.query.from.split("-")[0], req.query.from.split("-")[1]-1, req.query.from.split("-")[2]);
-        let toDate = new Date(req.query.to.split("-")[0], req.query.to.split("-")[1]-1, req.query.to.split("-")[2]);
+        let fromDate = new Date(req.query.from.split("-")[0], req.query.from.split("-")[1]-1, req.query.from.split("-")[2]).getTime();
+        let toDate = new Date(req.query.to.split("-")[0], req.query.to.split("-")[1]-1, req.query.to.split("-")[2]).getTime();
         const selectedLogs = [];
         for (let i = 0; i < log.length; i++) {
-          if (log[i].date >= fromDate && log.date <= toDate) {
+          let exerciseDate = new Date(log[i].date.split("-")[0], log[i].date.split("-")[1]-1, log[i].date.split("-")[2]).getTime();
+          if (exerciseDate >= fromDate && exerciseDate <= toDate) {
             selectedLogs.push(log[i]);
           }
         }
         log = selectedLogs;
         
         if (req.query.limit) {
-          log = selectedLogs.slice(0, parseInt(req.query.limit)+1)
+          log = selectedLogs.slice(0, parseInt(req.query.limit))
         }
       }
       
+      if (req.query.limit) {
+          log = log.slice(0, parseInt(req.query.limit));
+      }
       
       res.json({
         _id: user._id,
@@ -133,8 +137,6 @@ app.get('/', (req, res) => {
         count: user.count,
         log: log
       });
-      
-      
       
    });
   });
